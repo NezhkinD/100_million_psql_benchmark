@@ -1,0 +1,52 @@
+# https://blog.denisbondar.com/post/phpstorm_docker_xdebug/
+version: '3'
+services:
+   php-fpm:
+      restart: always
+      build:
+         context: docker/php
+      volumes:
+         - ./app:/home/app
+      environment:
+         XDEBUG_CONFIG: "remote_host=192.166.227.1 remote_enable=1"
+         PHP_IDE_CONFIG: "serverName=Docker"
+      networks:
+         - internal
+
+   nginx:
+      restart: always
+      build:
+         context: docker/nginx
+      volumes:
+         - ./app:/home/app
+      ports:
+         - "8770:80"
+      depends_on:
+         - php-fpm
+      networks:
+         - internal
+
+   psql:
+      image: postgres:15.2
+      restart: always
+      ports:
+         - "5432:5432"
+      environment:
+         - 'POSTGRES_USER=dnezhkin'
+         - 'POSTGRES_PASSWORD=wC3DXRWgCM'
+         - 'POSTGRES_HOST_AUTH_METHOD=trust'
+         - 'POSTGRES_DB=100_million'
+      volumes:
+         - ./data/psql:/var/lib/postgresql/data
+      networks:
+         - internal
+      depends_on:
+         - php-fpm
+
+networks:
+   internal:
+      driver: bridge
+      ipam:
+         driver: default
+         config:
+            -  subnet: 192.166.227.0/28
